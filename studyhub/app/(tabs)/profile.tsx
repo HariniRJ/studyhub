@@ -2,8 +2,6 @@ import { useRouter } from "expo-router";
 import { useState, useEffect } from "react";
 import { View, Text, TouchableOpacity, ScrollView, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { signOut, onAuthStateChanged } from "firebase/auth";
-import { auth } from "../../firebaseConfig";
 
 const interests = ["Data Structures", "Operating Systems", "DBMS", "Computer Networks"];
 
@@ -28,27 +26,24 @@ export default function Profile() {
   const [initials, setInitials] = useState("S");
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (user) {
-        const name = user.displayName || "Student";
-        const mail = user.email || "";
-        setDisplayName(name);
-        setEmail(mail);
-        setInitials(name.split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2));
-      }
-    });
-    return unsubscribe;
+    const savedName = localStorage.getItem("userName");
+    const savedEmail = localStorage.getItem("userEmail");
+    if (savedName) {
+      setDisplayName(savedName);
+      setInitials(savedName.split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2));
+    }
+    if (savedEmail) setEmail(savedEmail);
   }, []);
 
-  const handleLogout = async () => {
-    await signOut(auth);
+  const handleLogout = () => {
+    localStorage.removeItem("userName");
+    localStorage.removeItem("userEmail");
     router.replace("/");
   };
 
   return (
     <View style={styles.container}>
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-        {/* Top Banner */}
         <View style={styles.banner}>
           <View style={styles.avatarCircle}>
             <Text style={styles.avatarText}>{initials}</Text>
@@ -60,7 +55,6 @@ export default function Profile() {
           </View>
         </View>
 
-        {/* Stats */}
         <View style={styles.statsCard}>
           {[
             { icon: "flame", color: "#7c3aed", value: "12", label: "Day Streak" },
@@ -77,7 +71,6 @@ export default function Profile() {
           ))}
         </View>
 
-        {/* Study Interests */}
         <View style={styles.card}>
           <View style={styles.cardHeaderRow}>
             <Text style={styles.cardTitle}>Study Interests</Text>
@@ -94,7 +87,6 @@ export default function Profile() {
           </View>
         </View>
 
-        {/* Week Summary */}
         <View style={styles.card}>
           <View style={styles.cardHeaderRow}>
             <Ionicons name="trophy-outline" size={18} color="#22c55e" />
@@ -108,7 +100,6 @@ export default function Profile() {
           ))}
         </View>
 
-        {/* Menu */}
         <View style={styles.menuCard}>
           {menuItems.map((item, i) => (
             <TouchableOpacity
@@ -131,7 +122,6 @@ export default function Profile() {
           ))}
         </View>
 
-        {/* Logout */}
         <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
           <Ionicons name="log-out-outline" size={20} color="#fff" />
           <Text style={styles.logoutText}>Log Out</Text>
