@@ -2,28 +2,26 @@ import { useState } from "react";
 import { useRouter } from "expo-router";
 import {
   View, Text, TextInput, TouchableOpacity,
-  StyleSheet, ScrollView, KeyboardAvoidingView, Platform, ActivityIndicator,
+  StyleSheet, ScrollView, KeyboardAvoidingView, Platform,
+  ActivityIndicator, Modal, Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { initializeApp } from "firebase/app";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
-  getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword,
-  updateProfile, GoogleAuthProvider, signInWithPopup,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  updateProfile,
+  sendPasswordResetEmail,
+  GoogleAuthProvider,
+  signInWithCredential,
 } from "firebase/auth";
-import { getFirestore, doc, setDoc } from "firebase/firestore";
+import { doc, setDoc } from "firebase/firestore";
+import { auth, db } from "../constants/firebaseConfig";
+import * as WebBrowser from "expo-web-browser";
+import * as Google from "expo-auth-session/providers/google";
 
-const firebaseConfig = {
-  apiKey: "AIzaSyD6WuGb3HfdfzWnVDFGyqldbJ44nVQwPTQ",
-  authDomain: "studyhub-6a3c8.firebaseapp.com",
-  projectId: "studyhub-6a3c8",
-  storageBucket: "studyhub-6a3c8.firebasestorage.app",
-  messagingSenderId: "748311929927",
-  appId: "1:748311929927:web:6b9ae4e2cc780deaf8bd62",
-};
-
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
+// Required for expo-auth-session to work on Android/iOS
+WebBrowser.maybeCompleteAuthSession();
 
 export default function Login() {
   const router = useRouter();
@@ -35,15 +33,62 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const saveUserToFirestore = async (user: any, displayName?: string) => {
-    await setDoc(doc(db, "users", user.uid), {
-      uid: user.uid,
-      name: displayName || user.displayName || "Student",
-      email: user.email,
-      createdAt: new Date().toISOString(),
-    }, { merge: true });
-    localStorage.setItem("userName", displayName || user.displayName || "Student");
-    localStorage.setItem("userEmail", user.email || "");
+  // Forgot password modal state
+  const [forgotVisible, setForgotVisible] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState("");
+  const [forgotLoading, setForgotLoading] = useState(false);
+  const [forgotMessage, setForgotMessage] = useState("");
+
+  // Google OAuth — replace these with your actual Expo/Google client IDs
+  // Get them from: https://console.cloud.google.com/
+  const [request, response, promptAsync] = Google.useAuthRequest({
+    androidClientId: "20239469332-eb67aql2k1cko43amsh426tbagr98k8t.apps.googleusercontent.com",
+    webClientId: "20239469332-rp387iujoeqah1kvq7hrb0h0f8t3l48o.apps.googleusercontent.com",
+});
+
+  // Handle Google sign-in response
+  const handleGoogleSignIn = async () => {
+    setError("");
+    setLoading(true);
+    try {
+      const result = await promptAsync();
+
+      if (result?.type === "success") {
+        const { id_token } = result.params;
+        const credential = GoogleAuthProvider.credential(id_token);
+        const userCredential = await signInWithCredential(auth, credential);
+        await saveUserToStorage(userCredential.user);
+        router.replace("/(tabs)/home");
+      } else if (result?.type === "cancel") {
+        setError("Google sign-in was cancelled.");
+      } else {
+        setError("Google sign-in failed. Please try again.");
+      }
+    } catch (e: any) {
+      setError("Google sign-in failed. Please try again.");
+      console.error("Google sign-in error:", e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const saveUserToStorage = async (user: any, displayName?: string) => {
+    const resolvedName = displayName || user.displayName || "Student";
+    // Save to Firestore
+    await setDoc(
+      doc(db, "users", user.uid),
+      {
+        uid: user.uid,
+        name: resolvedName,
+        email: user.email,
+        createdAt: new Date().toISOString(),
+      },
+      { merge: true }
+    );
+    // Save locally using AsyncStorage (replaces localStorage)
+    await AsyncStorage.setItem("userName", resolvedName);
+    await AsyncStorage.setItem("userEmail", user.email || "");
+    await AsyncStorage.setItem("userId", user.uid || "");
   };
 
   const getErrorMessage = (code: string) => {
@@ -67,11 +112,11 @@ export default function Login() {
     try {
       if (isLogin) {
         const result = await signInWithEmailAndPassword(auth, email, password);
-        await saveUserToFirestore(result.user);
+        await saveUserToStorage(result.user);
       } else {
         const result = await createUserWithEmailAndPassword(auth, email, password);
         await updateProfile(result.user, { displayName: name });
-        await saveUserToFirestore(result.user, name);
+        await saveUserToStorage(result.user, name);
       }
       router.replace("/(tabs)/home");
     } catch (e: any) {
@@ -81,61 +126,50 @@ export default function Login() {
     }
   };
 
-  const handleGoogle = async () => {
-    setError("");
-    setLoading(true);
+  const handleForgotPassword = async () => {
+    if (!forgotEmail.trim()) {
+      setForgotMessage("Please enter your email address.");
+      return;
+    }
+    setForgotLoading(true);
+    setForgotMessage("");
     try {
-      const provider = new GoogleAuthProvider();
-      const result = await signInWithPopup(auth, provider);
-      await saveUserToFirestore(result.user);
-      router.replace("/(tabs)/home");
+      await sendPasswordResetEmail(auth, forgotEmail.trim());
+      setForgotMessage("✅ Reset link sent! Check your inbox.");
     } catch (e: any) {
-      setError("Google sign-in failed. Try again.");
+      if (e.code === "auth/user-not-found") {
+        setForgotMessage("No account found with this email.");
+      } else if (e.code === "auth/invalid-email") {
+        setForgotMessage("Please enter a valid email address.");
+      } else {
+        setForgotMessage("Failed to send reset email. Try again.");
+      }
     } finally {
-      setLoading(false);
+      setForgotLoading(false);
     }
   };
 
   return (
-    <KeyboardAvoidingView
-      style={{ flex: 1, backgroundColor: "#121212" }}
-      behavior={Platform.OS === "ios" ? "padding" : undefined}
-    >
-      <ScrollView contentContainerStyle={styles.container}>
-        <View style={styles.logoCircle}>
-          <Ionicons name="book-outline" size={36} color="#000" />
-        </View>
-        <Text style={styles.appName}>StudyHub</Text>
-        <Text style={styles.appTagline}>Focus. Connect. Achieve.</Text>
-
-        <View style={styles.card}>
-          <Text style={styles.heading}>{isLogin ? "Welcome Back" : "Join StudyHub"}</Text>
-          <Text style={styles.subHeading}>
-            {isLogin ? "Log in to continue your study journey" : "Create an account to get started"}
-          </Text>
-
-          {error !== "" && (
-            <View style={styles.errorBox}>
-              <Ionicons name="alert-circle-outline" size={16} color="#ff4444" />
-              <Text style={styles.errorText}>{error}</Text>
+    <>
+      {/* ── Forgot Password Modal ── */}
+      <Modal
+        visible={forgotVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setForgotVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalCard}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Reset Password</Text>
+              <TouchableOpacity onPress={() => { setForgotVisible(false); setForgotMessage(""); setForgotEmail(""); }}>
+                <Ionicons name="close" size={22} color="#aaa" />
+              </TouchableOpacity>
             </View>
-          )}
+            <Text style={styles.modalSubtitle}>
+              Enter your email and we'll send you a reset link.
+            </Text>
 
-          {!isLogin && (
-            <View style={styles.inputGroup}>
-              <Text style={styles.label}>Full Name</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="Enter your name"
-                placeholderTextColor="#555"
-                value={name}
-                onChangeText={setName}
-              />
-            </View>
-          )}
-
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Email</Text>
             <View style={styles.inputRow}>
               <Ionicons name="mail-outline" size={20} color="#555" style={styles.inputIcon} />
               <TextInput
@@ -144,68 +178,153 @@ export default function Login() {
                 placeholderTextColor="#555"
                 keyboardType="email-address"
                 autoCapitalize="none"
-                value={email}
-                onChangeText={setEmail}
+                value={forgotEmail}
+                onChangeText={setForgotEmail}
               />
             </View>
-          </View>
 
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Password</Text>
-            <View style={styles.inputRow}>
-              <Ionicons name="lock-closed-outline" size={20} color="#555" style={styles.inputIcon} />
-              <TextInput
-                style={styles.inputWithIcon}
-                placeholder="Enter your password"
-                placeholderTextColor="#555"
-                secureTextEntry={!showPassword}
-                value={password}
-                onChangeText={setPassword}
-              />
-              <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.eyeIcon}>
-                <Ionicons name={showPassword ? "eye-off-outline" : "eye-outline"} size={20} color="#555" />
-              </TouchableOpacity>
-            </View>
-          </View>
-
-          {isLogin && (
-            <TouchableOpacity style={{ alignSelf: "flex-end", marginBottom: 4 }}>
-              <Text style={styles.forgotText}>Forgot Password?</Text>
-            </TouchableOpacity>
-          )}
-
-          <TouchableOpacity
-            style={[styles.btn, loading && { opacity: 0.7 }]}
-            onPress={handleSubmit}
-            disabled={loading}
-          >
-            {loading ? <ActivityIndicator color="#000" /> : (
-              <Text style={styles.btnText}>{isLogin ? "Login" : "Sign Up"}</Text>
+            {forgotMessage !== "" && (
+              <Text style={[
+                styles.forgotMsg,
+                forgotMessage.startsWith("✅") ? styles.forgotSuccess : styles.forgotError,
+              ]}>
+                {forgotMessage}
+              </Text>
             )}
-          </TouchableOpacity>
 
-          <View style={styles.dividerRow}>
-            <View style={styles.dividerLine} />
-            <Text style={styles.dividerText}>or</Text>
-            <View style={styles.dividerLine} />
+            <TouchableOpacity
+              style={[styles.btn, forgotLoading && { opacity: 0.7 }]}
+              onPress={handleForgotPassword}
+              disabled={forgotLoading}
+            >
+              {forgotLoading
+                ? <ActivityIndicator color="#000" />
+                : <Text style={styles.btnText}>Send Reset Link</Text>
+              }
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* ── Main Screen ── */}
+      <KeyboardAvoidingView
+        style={{ flex: 1, backgroundColor: "#121212" }}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+      >
+        <ScrollView contentContainerStyle={styles.container}>
+          <View style={styles.logoCircle}>
+            <Ionicons name="book-outline" size={36} color="#000" />
+          </View>
+          <Text style={styles.appName}>StudyHub</Text>
+          <Text style={styles.appTagline}>Focus. Connect. Achieve.</Text>
+
+          <View style={styles.card}>
+            <Text style={styles.heading}>{isLogin ? "Welcome Back" : "Join StudyHub"}</Text>
+            <Text style={styles.subHeading}>
+              {isLogin ? "Log in to continue your study journey" : "Create an account to get started"}
+            </Text>
+
+            {error !== "" && (
+              <View style={styles.errorBox}>
+                <Ionicons name="alert-circle-outline" size={16} color="#ff4444" />
+                <Text style={styles.errorText}>{error}</Text>
+              </View>
+            )}
+
+            {!isLogin && (
+              <View style={styles.inputGroup}>
+                <Text style={styles.label}>Full Name</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Enter your name"
+                  placeholderTextColor="#555"
+                  value={name}
+                  onChangeText={setName}
+                />
+              </View>
+            )}
+
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Email</Text>
+              <View style={styles.inputRow}>
+                <Ionicons name="mail-outline" size={20} color="#555" style={styles.inputIcon} />
+                <TextInput
+                  style={styles.inputWithIcon}
+                  placeholder="your.email@example.com"
+                  placeholderTextColor="#555"
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  value={email}
+                  onChangeText={setEmail}
+                />
+              </View>
+            </View>
+
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Password</Text>
+              <View style={styles.inputRow}>
+                <Ionicons name="lock-closed-outline" size={20} color="#555" style={styles.inputIcon} />
+                <TextInput
+                  style={styles.inputWithIcon}
+                  placeholder="Enter your password"
+                  placeholderTextColor="#555"
+                  secureTextEntry={!showPassword}
+                  value={password}
+                  onChangeText={setPassword}
+                />
+                <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.eyeIcon}>
+                  <Ionicons name={showPassword ? "eye-off-outline" : "eye-outline"} size={20} color="#555" />
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            {isLogin && (
+              <TouchableOpacity
+                style={{ alignSelf: "flex-end", marginBottom: 4 }}
+                onPress={() => setForgotVisible(true)}
+              >
+                <Text style={styles.forgotText}>Forgot Password?</Text>
+              </TouchableOpacity>
+            )}
+
+            <TouchableOpacity
+              style={[styles.btn, loading && { opacity: 0.7 }]}
+              onPress={handleSubmit}
+              disabled={loading}
+            >
+              {loading
+                ? <ActivityIndicator color="#000" />
+                : <Text style={styles.btnText}>{isLogin ? "Login" : "Sign Up"}</Text>
+              }
+            </TouchableOpacity>
+
+            <View style={styles.dividerRow}>
+              <View style={styles.dividerLine} />
+              <Text style={styles.dividerText}>or</Text>
+              <View style={styles.dividerLine} />
+            </View>
+
+            <TouchableOpacity
+              style={[styles.socialBtn, (!request || loading) && { opacity: 0.6 }]}
+              onPress={handleGoogleSignIn}
+              disabled={!request || loading}
+            >
+              <Ionicons name="logo-google" size={20} color="#333" />
+              <Text style={styles.socialBtnText}>Continue with Google</Text>
+            </TouchableOpacity>
           </View>
 
-          <TouchableOpacity style={styles.socialBtn} onPress={handleGoogle} disabled={loading}>
-            <Ionicons name="logo-google" size={20} color="#333" />
-            <Text style={styles.socialBtnText}>Continue with Google</Text>
-          </TouchableOpacity>
-        </View>
-
-        <View style={styles.toggleRow}>
-          <Text style={styles.toggleText}>
-            {isLogin ? "Don't have an account? " : "Already have an account? "}
-          </Text>
-          <TouchableOpacity onPress={() => { setIsLogin(!isLogin); setError(""); }}>
-            <Text style={styles.toggleLink}>{isLogin ? "Sign Up" : "Log In"}</Text>
-          </TouchableOpacity>
-        </View>
-      </ScrollView>
-    </KeyboardAvoidingView>
+          <View style={styles.toggleRow}>
+            <Text style={styles.toggleText}>
+              {isLogin ? "Don't have an account? " : "Already have an account? "}
+            </Text>
+            <TouchableOpacity onPress={() => { setIsLogin(!isLogin); setError(""); }}>
+              <Text style={styles.toggleLink}>{isLogin ? "Sign Up" : "Log In"}</Text>
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </>
   );
 }
 
@@ -263,4 +382,20 @@ const styles = StyleSheet.create({
   toggleRow: { flexDirection: "row", marginTop: 20 },
   toggleText: { color: "#888", fontSize: 14 },
   toggleLink: { color: "#1DB954", fontWeight: "600", fontSize: 14 },
+  // Modal styles
+  modalOverlay: {
+    flex: 1, backgroundColor: "rgba(0,0,0,0.7)",
+    justifyContent: "center", alignItems: "center", padding: 24,
+  },
+  modalCard: {
+    width: "100%", backgroundColor: "#1a1a1a",
+    borderRadius: 20, padding: 24,
+    borderWidth: 1, borderColor: "rgba(255,255,255,0.08)",
+  },
+  modalHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 8 },
+  modalTitle: { fontSize: 20, fontWeight: "bold", color: "#fff" },
+  modalSubtitle: { color: "#888", fontSize: 13, marginBottom: 16 },
+  forgotMsg: { fontSize: 13, marginTop: 10, marginBottom: 4 },
+  forgotSuccess: { color: "#1DB954" },
+  forgotError: { color: "#ff4444" },
 });
