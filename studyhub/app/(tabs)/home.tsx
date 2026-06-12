@@ -1,85 +1,57 @@
-import { useRouter } from "expo-router";
-import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Linking } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
-import { auth } from "../../firebaseConfig";
+import { Linking, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 const liveRooms = [
   {
     id: 1, subject: "Data Structures & Algorithms", emoji: "💻",
     members: 12, duration: "2h 15m",
     meetLink: "https://meet.google.com/vwg-hios-zrp",
-    participants: [
-      { avatar: "AJ", color: "#3b82f6" },
-      { avatar: "SC", color: "#a855f7" },
-      { avatar: "MB", color: "#ec4899" },
-    ],
+    participants: [{ avatar: "AJ" }, { avatar: "SC" }, { avatar: "MB" }],
     othersCount: 9,
   },
   {
     id: 2, subject: "Operating Systems", emoji: "⚙️",
     members: 8, duration: "1h 45m",
     meetLink: "https://meet.google.com/zgn-nwwf-yzh",
-    participants: [
-      { avatar: "EW", color: "#22c55e" },
-      { avatar: "PK", color: "#6366f1" },
-      { avatar: "ME", color: "#f97316" },
-    ],
+    participants: [{ avatar: "EW" }, { avatar: "PK" }, { avatar: "ME" }],
     othersCount: 5,
   },
   {
     id: 3, subject: "Database Management", emoji: "🗄️",
     members: 15, duration: "3h 20m",
     meetLink: "https://meet.google.com/jja-hfrc-ypq",
-    participants: [
-      { avatar: "TL", color: "#06b6d4" },
-      { avatar: "VN", color: "#14b8a6" },
-      { avatar: "KS", color: "#f43f5e" },
-    ],
+    participants: [{ avatar: "TL" }, { avatar: "VN" }, { avatar: "KS" }],
     othersCount: 12,
   },
   {
     id: 4, subject: "Analysis & Design of Algorithms", emoji: "📊",
     members: 10, duration: "1h 30m",
     meetLink: "https://meet.google.com/uei-gszm-ope",
-    participants: [
-      { avatar: "RK", color: "#8b5cf6" },
-      { avatar: "NP", color: "#ec4899" },
-      { avatar: "AS", color: "#f59e0b" },
-    ],
+    participants: [{ avatar: "RK" }, { avatar: "NP" }, { avatar: "AS" }],
     othersCount: 7,
   },
   {
     id: 5, subject: "Mathematics", emoji: "📐",
     members: 6, duration: "2h 00m",
     meetLink: "https://meet.google.com/aor-emxa-epv",
-    participants: [
-      { avatar: "JD", color: "#10b981" },
-      { avatar: "MS", color: "#3b82f6" },
-      { avatar: "AL", color: "#f97316" },
-    ],
+    participants: [{ avatar: "JD" }, { avatar: "MS" }, { avatar: "AL" }],
     othersCount: 3,
   },
   {
     id: 6, subject: "Chemistry", emoji: "🧪",
     members: 9, duration: "1h 15m",
     meetLink: "https://meet.google.com/kyn-osvu-ywo",
-    participants: [
-      { avatar: "PQ", color: "#a855f7" },
-      { avatar: "RS", color: "#22c55e" },
-      { avatar: "TU", color: "#ef4444" },
-    ],
+    participants: [{ avatar: "PQ" }, { avatar: "RS" }, { avatar: "TU" }],
     othersCount: 6,
   },
   {
     id: 7, subject: "Physics", emoji: "⚛️",
     members: 11, duration: "2h 45m",
     meetLink: "https://meet.google.com/xms-cthz-xrq",
-    participants: [
-      { avatar: "VW", color: "#06b6d4" },
-      { avatar: "XY", color: "#f59e0b" },
-      { avatar: "ZA", color: "#8b5cf6" },
-    ],
+    participants: [{ avatar: "VW" }, { avatar: "XY" }, { avatar: "ZA" }],
     othersCount: 8,
   },
 ];
@@ -89,10 +61,9 @@ export default function Home() {
   const [userName, setUserName] = useState("Student");
 
   useEffect(() => {
-    const user = auth.currentUser;
-    if (user?.displayName) {
-      setUserName(user.displayName.split(" ")[0]);
-    }
+    AsyncStorage.getItem("userName").then(val => {
+      if (val) setUserName(val.split(" ")[0]);
+    });
   }, []);
 
   const getGreeting = () => {
@@ -104,23 +75,27 @@ export default function Home() {
 
   return (
     <View style={styles.container}>
+      {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.greeting}>{getGreeting()}, {userName}! 👋</Text>
-        <Text style={styles.subGreeting}>Ready to continue your study journey?</Text>
+        <View>
+          <Text style={styles.greeting}>{getGreeting()}, {userName} 👋</Text>
+          <Text style={styles.subGreeting}>Ready to continue your study journey?</Text>
+        </View>
       </View>
 
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+
         {/* Stats */}
         <View style={styles.statsRow}>
-          <View style={[styles.statCard, { backgroundColor: "#7c3aed" }]}>
-            <Ionicons name="flame" size={22} color="#fff" />
-            <Text style={styles.statLabel}>Streak</Text>
+          <View style={[styles.statCard, { backgroundColor: "#2d2d2d" }]}>
+            <Ionicons name="flame" size={20} color="#f5c842" />
+            <Text style={styles.statLabel}>STREAK</Text>
             <Text style={styles.statValue}>12 Days</Text>
             <Text style={styles.statSub}>Keep it going! 🔥</Text>
           </View>
-          <View style={[styles.statCard, { backgroundColor: "#16a34a" }]}>
-            <Ionicons name="time-outline" size={22} color="#fff" />
-            <Text style={styles.statLabel}>Today</Text>
+          <View style={[styles.statCard, { backgroundColor: "#2d2d2d" }]}>
+            <Ionicons name="time-outline" size={20} color="#a8c5a0" />
+            <Text style={styles.statLabel}>TODAY</Text>
             <Text style={styles.statValue}>5h 15m</Text>
             <Text style={styles.statSub}>Great progress!</Text>
           </View>
@@ -128,11 +103,11 @@ export default function Home() {
 
         {/* Create Room */}
         <TouchableOpacity style={styles.createBtn} onPress={() => router.push("/study-room")}>
-          <Ionicons name="add" size={24} color="#fff" />
+          <Ionicons name="add-circle-outline" size={22} color="#f5f0e8" />
           <Text style={styles.createBtnText}>Create Study Room</Text>
         </TouchableOpacity>
 
-        {/* Live Rooms Header */}
+        {/* Section Header */}
         <View style={styles.sectionHeader}>
           <View style={styles.liveRow}>
             <View style={styles.liveDot} />
@@ -151,9 +126,10 @@ export default function Home() {
                   <Text style={styles.roomSubject}>{room.subject}</Text>
                 </View>
                 <View style={styles.roomMeta}>
-                  <Ionicons name="people-outline" size={14} color="#a78bfa" />
+                  <Ionicons name="people-outline" size={13} color="#8a8a7a" />
                   <Text style={styles.roomMetaText}>{room.members} members</Text>
-                  <Ionicons name="time-outline" size={14} color="#4ade80" style={{ marginLeft: 8 }} />
+                  <Text style={styles.metaDivider}>·</Text>
+                  <Ionicons name="time-outline" size={13} color="#8a8a7a" />
                   <Text style={styles.roomMetaText}>{room.duration}</Text>
                 </View>
               </View>
@@ -166,7 +142,7 @@ export default function Home() {
             {/* Avatars */}
             <View style={styles.avatarRow}>
               {room.participants.map((p, i) => (
-                <View key={i} style={[styles.avatar, { backgroundColor: p.color }]}>
+                <View key={i} style={styles.avatar}>
                   <Text style={styles.avatarText}>{p.avatar}</Text>
                 </View>
               ))}
@@ -177,12 +153,12 @@ export default function Home() {
               )}
             </View>
 
-            {/* Join Button — opens Google Meet */}
+            {/* Join Button */}
             <TouchableOpacity
               style={styles.joinBtn}
               onPress={() => Linking.openURL(room.meetLink)}
             >
-              <Ionicons name="videocam" size={18} color="#fff" style={{ marginRight: 6 }} />
+              <Ionicons name="videocam-outline" size={16} color="#f5f0e8" style={{ marginRight: 6 }} />
               <Text style={styles.joinBtnText}>Join on Google Meet</Text>
             </TouchableOpacity>
           </View>
@@ -193,63 +169,108 @@ export default function Home() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#000" },
+  container: { flex: 1, backgroundColor: "#f5f0e8" },
+
   header: {
-    backgroundColor: "rgba(88,28,235,0.3)",
-    paddingHorizontal: 20, paddingTop: 56, paddingBottom: 16,
+    backgroundColor: "#1a1a1a",
+    paddingHorizontal: 22,
+    paddingTop: 56,
+    paddingBottom: 22,
   },
-  greeting: { fontSize: 22, fontWeight: "bold", color: "#fff" },
-  subGreeting: { fontSize: 13, color: "#ccc", marginTop: 4 },
-  scroll: { padding: 16, paddingBottom: 20 },
-  statsRow: { flexDirection: "row", gap: 12, marginBottom: 14 },
-  statCard: { flex: 1, borderRadius: 16, padding: 16 },
-  statLabel: { color: "#fff", fontSize: 12, fontWeight: "500", marginTop: 4 },
-  statValue: { color: "#fff", fontSize: 24, fontWeight: "bold", marginTop: 4 },
-  statSub: { color: "rgba(255,255,255,0.7)", fontSize: 11, marginTop: 2 },
+  greeting: { fontSize: 22, fontWeight: "700", color: "#f5f0e8" },
+  subGreeting: { fontSize: 13, color: "#8a8a7a", marginTop: 4 },
+
+  scroll: { padding: 16, paddingBottom: 32 },
+
+  statsRow: { flexDirection: "row", gap: 12, marginBottom: 16 },
+  statCard: {
+    flex: 1,
+    borderRadius: 16,
+    padding: 16,
+  },
+  statLabel: {
+    color: "#aaa",
+    fontSize: 10,
+    fontWeight: "600",
+    marginTop: 8,
+    letterSpacing: 1,
+    textTransform: "uppercase",
+  },
+  statValue: { color: "#f5f0e8", fontSize: 22, fontWeight: "700", marginTop: 4 },
+  statSub: { color: "#888", fontSize: 11, marginTop: 2 },
+
   createBtn: {
-    backgroundColor: "#16a34a", borderRadius: 16, padding: 16,
-    flexDirection: "row", alignItems: "center", justifyContent: "center",
-    gap: 8, marginBottom: 20,
+    backgroundColor: "#1a1a1a",
+    borderRadius: 14,
+    padding: 16,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    marginBottom: 24,
   },
-  createBtnText: { color: "#fff", fontWeight: "bold", fontSize: 16 },
+  createBtnText: { color: "#f5f0e8", fontWeight: "700", fontSize: 15 },
+
   sectionHeader: {
-    flexDirection: "row", justifyContent: "space-between",
-    alignItems: "center", marginBottom: 12,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 14,
   },
   liveRow: { flexDirection: "row", alignItems: "center", gap: 8 },
-  liveDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: "#22c55e" },
-  sectionTitle: { color: "#fff", fontSize: 18, fontWeight: "bold" },
-  activeCount: { color: "#888", fontSize: 13 },
+  liveDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: "#5a7a5a" },
+  sectionTitle: { color: "#1a1a1a", fontSize: 16, fontWeight: "700" },
+  activeCount: { color: "#8a8a7a", fontSize: 12 },
+
   roomCard: {
-    backgroundColor: "#0d0d0d", borderRadius: 16, padding: 16,
-    marginBottom: 14, borderWidth: 1, borderColor: "rgba(88,28,235,0.25)",
+    backgroundColor: "#fff",
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 12,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 2,
   },
   roomCardHeader: { flexDirection: "row", justifyContent: "space-between", marginBottom: 12 },
-  roomTitleRow: { flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 4 },
-  roomEmoji: { fontSize: 18 },
-  roomSubject: { color: "#fff", fontWeight: "bold", fontSize: 15 },
+  roomTitleRow: { flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 5 },
+  roomEmoji: { fontSize: 16 },
+  roomSubject: { color: "#1a1a1a", fontWeight: "600", fontSize: 14, flex: 1 },
   roomMeta: { flexDirection: "row", alignItems: "center", gap: 4 },
-  roomMetaText: { color: "#888", fontSize: 12 },
+  roomMetaText: { color: "#8a8a7a", fontSize: 12 },
+  metaDivider: { color: "#ccc", marginHorizontal: 4 },
+
   liveBadge: {
-    flexDirection: "row", alignItems: "center", gap: 5,
-    backgroundColor: "rgba(20,83,45,0.5)", paddingHorizontal: 10,
-    paddingVertical: 5, borderRadius: 20, borderWidth: 1,
-    borderColor: "rgba(34,197,94,0.3)", alignSelf: "flex-start",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    backgroundColor: "#eef4ee",
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 20,
+    alignSelf: "flex-start",
   },
-  liveBadgeDot: { width: 7, height: 7, borderRadius: 4, backgroundColor: "#22c55e" },
-  liveBadgeText: { color: "#4ade80", fontSize: 11, fontWeight: "600" },
-  avatarRow: { flexDirection: "row", gap: 6, marginBottom: 12 },
-  avatar: { width: 38, height: 38, borderRadius: 19, alignItems: "center", justifyContent: "center" },
-  avatarText: { color: "#fff", fontSize: 11, fontWeight: "bold" },
-  avatarExtra: {
-    backgroundColor: "rgba(88,28,235,0.4)",
-    borderWidth: 1, borderColor: "rgba(167,139,250,0.3)",
+  liveBadgeDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: "#5a7a5a" },
+  liveBadgeText: { color: "#5a7a5a", fontSize: 11, fontWeight: "600" },
+
+  avatarRow: { flexDirection: "row", gap: 6, marginBottom: 14 },
+  avatar: {
+    width: 36, height: 36, borderRadius: 18,
+    backgroundColor: "#2d2d2d",
+    alignItems: "center", justifyContent: "center",
   },
-  avatarExtraText: { color: "#c4b5fd", fontSize: 11, fontWeight: "bold" },
+  avatarText: { color: "#f5f0e8", fontSize: 11, fontWeight: "700" },
+  avatarExtra: { backgroundColor: "#e8e3db" },
+  avatarExtraText: { color: "#8a8a7a", fontSize: 11, fontWeight: "700" },
+
   joinBtn: {
-    backgroundColor: "#16a34a", borderRadius: 12,
-    paddingVertical: 12, alignItems: "center",
-    flexDirection: "row", justifyContent: "center",
+    backgroundColor: "#1a1a1a",
+    borderRadius: 12,
+    paddingVertical: 12,
+    alignItems: "center",
+    flexDirection: "row",
+    justifyContent: "center",
   },
-  joinBtnText: { color: "#fff", fontWeight: "bold", fontSize: 14 },
+  joinBtnText: { color: "#f5f0e8", fontWeight: "600", fontSize: 14 },
 });

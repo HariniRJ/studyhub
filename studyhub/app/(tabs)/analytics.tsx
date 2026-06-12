@@ -1,5 +1,5 @@
-import { View, Text, ScrollView, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { ScrollView, StyleSheet, Text, View } from "react-native";
 
 const weeklyData = [
   { day: "Mon", hours: 4.5 },
@@ -21,10 +21,10 @@ const achievements = [
 ];
 
 const recentSessions = [
-  { subject: "Data Structures", duration: "2h 30m", date: "Today", color: "#3b82f6" },
-  { subject: "Operating Systems", duration: "1h 45m", date: "Yesterday", color: "#a855f7" },
-  { subject: "DBMS", duration: "3h 15m", date: "2 days ago", color: "#22c55e" },
-  { subject: "Computer Networks", duration: "1h 20m", date: "3 days ago", color: "#f97316" },
+  { subject: "Data Structures", duration: "2h 30m", date: "Today" },
+  { subject: "Operating Systems", duration: "1h 45m", date: "Yesterday" },
+  { subject: "DBMS", duration: "3h 15m", date: "2 days ago" },
+  { subject: "Computer Networks", duration: "1h 20m", date: "3 days ago" },
 ];
 
 const maxHours = Math.max(...weeklyData.map((d) => d.hours));
@@ -38,36 +38,39 @@ export default function Analytics() {
       </View>
 
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+
+        {/* Stats Row */}
         <View style={styles.statsRow}>
-          <View style={[styles.statCard, { backgroundColor: "#7c3aed" }]}>
-            <Ionicons name="flame" size={20} color="#fff" />
+          <View style={styles.statCard}>
+            <Ionicons name="flame" size={18} color="#f5c842" />
             <Text style={styles.statValue}>12</Text>
             <Text style={styles.statLabel}>Day Streak</Text>
           </View>
-          <View style={[styles.statCard, { backgroundColor: "#16a34a" }]}>
-            <Ionicons name="time-outline" size={20} color="#fff" />
+          <View style={styles.statCard}>
+            <Ionicons name="time-outline" size={18} color="#a8c5a0" />
             <Text style={styles.statValue}>156h</Text>
             <Text style={styles.statLabel}>Total Hours</Text>
           </View>
-          <View style={[styles.statCard, { backgroundColor: "#6d28d9" }]}>
-            <Ionicons name="flag-outline" size={20} color="#fff" />
+          <View style={styles.statCard}>
+            <Ionicons name="flag-outline" size={18} color="#aaa" />
             <Text style={styles.statValue}>5.3h</Text>
             <Text style={styles.statLabel}>Daily Avg</Text>
           </View>
         </View>
 
+        {/* Weekly Chart */}
         <View style={styles.card}>
           <View style={styles.cardHeaderRow}>
             <Text style={styles.cardTitle}>This Week</Text>
             <View style={styles.trendBadge}>
-              <Ionicons name="trending-up" size={14} color="#4ade80" />
+              <Ionicons name="trending-up" size={13} color="#5a7a5a" />
               <Text style={styles.trendText}>+15%</Text>
             </View>
           </View>
 
           <View style={styles.chartContainer}>
             {weeklyData.map((d, i) => {
-              const heightPct = (d.hours / maxHours) * 140;
+              const heightPct = (d.hours / maxHours) * 130;
               return (
                 <View key={i} style={styles.barWrapper}>
                   <Text style={styles.barLabel}>{d.hours}h</Text>
@@ -86,27 +89,32 @@ export default function Analytics() {
           </View>
         </View>
 
+        {/* Achievements */}
         <View style={styles.card}>
           <View style={styles.cardHeaderRow}>
-            <Ionicons name="trophy-outline" size={18} color="#22c55e" />
+            <Ionicons name="trophy-outline" size={18} color="#1a1a1a" />
             <Text style={[styles.cardTitle, { marginLeft: 6 }]}>Achievements</Text>
           </View>
           <View style={styles.achievementsGrid}>
             {achievements.map((a, i) => (
-              <View key={i} style={[styles.achievementItem, a.unlocked ? styles.achievementUnlocked : styles.achievementLocked]}>
-                <Text style={{ fontSize: 28, marginBottom: 6 }}>{a.emoji}</Text>
-                <Text style={styles.achievementName}>{a.name}</Text>
+              <View key={i} style={[
+                styles.achievementItem,
+                a.unlocked ? styles.achievementUnlocked : styles.achievementLocked
+              ]}>
+                <Text style={{ fontSize: 26, marginBottom: 4 }}>{a.emoji}</Text>
+                <Text style={[styles.achievementName, !a.unlocked && { color: "#bbb" }]}>{a.name}</Text>
               </View>
             ))}
           </View>
         </View>
 
+        {/* Recent Sessions */}
         <View style={styles.card}>
           <Text style={styles.cardTitle}>Recent Sessions</Text>
           {recentSessions.map((s, i) => (
-            <View key={i} style={styles.sessionRow}>
-              <View style={[styles.sessionIcon, { backgroundColor: s.color }]}>
-                <Ionicons name="time-outline" size={18} color="#fff" />
+            <View key={i} style={[styles.sessionRow, i > 0 && { borderTopWidth: 1, borderTopColor: "#f0ebe3" }]}>
+              <View style={styles.sessionIcon}>
+                <Ionicons name="time-outline" size={16} color="#1a1a1a" />
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={styles.sessionSubject}>{s.subject}</Text>
@@ -116,47 +124,103 @@ export default function Analytics() {
             </View>
           ))}
         </View>
+
       </ScrollView>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#000" },
-  header: { backgroundColor: "rgba(88,28,235,0.3)", paddingHorizontal: 20, paddingTop: 56, paddingBottom: 16 },
-  title: { fontSize: 22, fontWeight: "bold", color: "#fff" },
-  subtitle: { color: "#ccc", fontSize: 13, marginTop: 4 },
-  scroll: { padding: 16, paddingBottom: 24 },
-  statsRow: { flexDirection: "row", gap: 10, marginBottom: 14 },
-  statCard: { flex: 1, borderRadius: 14, padding: 12, alignItems: "center", gap: 4 },
-  statValue: { color: "#fff", fontSize: 20, fontWeight: "bold" },
-  statLabel: { color: "rgba(255,255,255,0.7)", fontSize: 10, textAlign: "center" },
-  card: { backgroundColor: "#0d0d0d", borderRadius: 16, padding: 16, marginBottom: 14, borderWidth: 1, borderColor: "rgba(88,28,235,0.25)" },
-  cardHeaderRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 16 },
-  cardTitle: { color: "#fff", fontSize: 16, fontWeight: "bold" },
-  trendBadge: {
-    flexDirection: "row", alignItems: "center", gap: 4,
-    backgroundColor: "rgba(20,83,45,0.5)", paddingHorizontal: 10,
-    paddingVertical: 4, borderRadius: 20, borderWidth: 1, borderColor: "rgba(34,197,94,0.3)",
+  container: { flex: 1, backgroundColor: "#f5f0e8" },
+
+  header: {
+    backgroundColor: "#1a1a1a",
+    paddingHorizontal: 22,
+    paddingTop: 56,
+    paddingBottom: 22,
   },
-  trendText: { color: "#4ade80", fontSize: 12, fontWeight: "600" },
-  chartContainer: { flexDirection: "row", alignItems: "flex-end", height: 180, gap: 6, marginBottom: 12 },
+  title: { fontSize: 22, fontWeight: "700", color: "#f5f0e8" },
+  subtitle: { color: "#8a8a7a", fontSize: 13, marginTop: 4 },
+
+  scroll: { padding: 16, paddingBottom: 32 },
+
+  statsRow: { flexDirection: "row", gap: 10, marginBottom: 16 },
+  statCard: {
+    flex: 1,
+    backgroundColor: "#2d2d2d",
+    borderRadius: 14,
+    padding: 12,
+    alignItems: "center",
+    gap: 4,
+  },
+  statValue: { color: "#f5f0e8", fontSize: 20, fontWeight: "700" },
+  statLabel: { color: "#888", fontSize: 10, textAlign: "center", textTransform: "uppercase", letterSpacing: 0.5 },
+
+  card: {
+    backgroundColor: "#fff",
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 14,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  cardHeaderRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 16,
+  },
+  cardTitle: { color: "#1a1a1a", fontSize: 16, fontWeight: "700" },
+
+  trendBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    backgroundColor: "#eef4ee",
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 20,
+  },
+  trendText: { color: "#5a7a5a", fontSize: 12, fontWeight: "600" },
+
+  chartContainer: { flexDirection: "row", alignItems: "flex-end", height: 170, gap: 6, marginBottom: 12 },
   barWrapper: { flex: 1, alignItems: "center", justifyContent: "flex-end", height: "100%" },
-  barLabel: { color: "#fff", fontSize: 9, marginBottom: 4 },
-  barBg: { width: "100%", height: 140, justifyContent: "flex-end" },
-  bar: { width: "100%", backgroundColor: "#16a34a", borderRadius: 4 },
-  dayLabel: { color: "#888", fontSize: 10, marginTop: 4 },
-  totalRow: { flexDirection: "row", justifyContent: "space-between", borderTopWidth: 1, borderTopColor: "rgba(88,28,235,0.25)", paddingTop: 12 },
-  totalLabel: { color: "#888" },
-  totalValue: { color: "#fff", fontWeight: "bold", fontSize: 16 },
+  barLabel: { color: "#8a8a7a", fontSize: 9, marginBottom: 4 },
+  barBg: { width: "100%", height: 130, justifyContent: "flex-end" },
+  bar: { width: "100%", backgroundColor: "#2d2d2d", borderRadius: 4 },
+  dayLabel: { color: "#8a8a7a", fontSize: 10, marginTop: 4 },
+
+  totalRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    borderTopWidth: 1,
+    borderTopColor: "#f0ebe3",
+    paddingTop: 12,
+  },
+  totalLabel: { color: "#8a8a7a", fontSize: 13 },
+  totalValue: { color: "#1a1a1a", fontWeight: "700", fontSize: 16 },
+
   achievementsGrid: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
   achievementItem: { width: "30%", borderRadius: 12, padding: 12, alignItems: "center" },
-  achievementUnlocked: { backgroundColor: "rgba(20,83,45,0.3)", borderWidth: 2, borderColor: "rgba(34,197,94,0.4)" },
-  achievementLocked: { backgroundColor: "rgba(30,30,30,0.5)", borderWidth: 1, borderColor: "#222", opacity: 0.5 },
-  achievementName: { color: "#fff", fontSize: 10, fontWeight: "500", textAlign: "center", marginTop: 2 },
-  sessionRow: { flexDirection: "row", alignItems: "center", gap: 12, marginTop: 12 },
-  sessionIcon: { width: 40, height: 40, borderRadius: 10, alignItems: "center", justifyContent: "center" },
-  sessionSubject: { color: "#fff", fontWeight: "600", fontSize: 14 },
-  sessionDate: { color: "#888", fontSize: 12, marginTop: 2 },
-  sessionDuration: { color: "#4ade80", fontWeight: "bold", fontSize: 14 },
+  achievementUnlocked: { backgroundColor: "#f5f0e8", borderWidth: 1, borderColor: "#e0d8cc" },
+  achievementLocked: { backgroundColor: "#f9f7f3", borderWidth: 1, borderColor: "#ede8e0", opacity: 0.5 },
+  achievementName: { color: "#1a1a1a", fontSize: 10, fontWeight: "500", textAlign: "center", marginTop: 2 },
+
+  sessionRow: { flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 12 },
+  sessionIcon: {
+    width: 38,
+    height: 38,
+    borderRadius: 10,
+    backgroundColor: "#f5f0e8",
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: "#e0d8cc",
+  },
+  sessionSubject: { color: "#1a1a1a", fontWeight: "600", fontSize: 14 },
+  sessionDate: { color: "#8a8a7a", fontSize: 12, marginTop: 2 },
+  sessionDuration: { color: "#5a7a5a", fontWeight: "700", fontSize: 14 },
 });

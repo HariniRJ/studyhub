@@ -1,16 +1,10 @@
-import { useRouter } from "expo-router";
-import { useState, useEffect } from "react";
-import { View, Text, TouchableOpacity, ScrollView, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useRouter } from "expo-router";
+import { useEffect, useState } from "react";
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 const interests = ["Data Structures", "Operating Systems", "DBMS", "Computer Networks"];
-
-const menuItems = [
-  { icon: "settings-outline", label: "Settings" },
-  { icon: "notifications-outline", label: "Notifications", badge: "3" },
-  { icon: "shield-outline", label: "Privacy & Security" },
-  { icon: "help-circle-outline", label: "Help & Support" },
-];
 
 const weekSummary = [
   { label: "Study Sessions", value: "32 sessions" },
@@ -26,18 +20,37 @@ export default function Profile() {
   const [initials, setInitials] = useState("S");
 
   useEffect(() => {
-    const savedName = localStorage.getItem("userName");
-    const savedEmail = localStorage.getItem("userEmail");
-    if (savedName) {
-      setDisplayName(savedName);
-      setInitials(savedName.split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2));
-    }
-    if (savedEmail) setEmail(savedEmail);
+    const loadUser = async () => {
+      try {
+        const storedName = await AsyncStorage.getItem("userName");
+        const storedEmail = await AsyncStorage.getItem("userEmail");
+
+        if (storedName && storedName.trim()) {
+          setDisplayName(storedName.trim());
+          // Build initials from name (e.g. "John Doe" → "JD", "John" → "J")
+          const parts = storedName.trim().split(" ").filter(Boolean);
+          const built = parts.length >= 2
+            ? parts[0][0].toUpperCase() + parts[1][0].toUpperCase()
+            : parts[0][0].toUpperCase();
+          setInitials(built);
+        }
+
+        if (storedEmail && storedEmail.trim()) {
+          setEmail(storedEmail.trim());
+        }
+      } catch (e) {
+        console.log("Failed to load user data:", e);
+      }
+    };
+
+    loadUser();
   }, []);
 
-  const handleLogout = () => {
-    localStorage.removeItem("userName");
-    localStorage.removeItem("userEmail");
+  const handleLogout = async () => {
+    try {
+      await AsyncStorage.removeItem("userName");
+      await AsyncStorage.removeItem("userEmail");
+    } catch (_) {}
     router.replace("/");
   };
 
@@ -49,10 +62,12 @@ export default function Profile() {
             <Text style={styles.avatarText}>{initials}</Text>
           </View>
           <Text style={styles.name}>{displayName}</Text>
-          <View style={styles.emailRow}>
-            <Ionicons name="mail-outline" size={14} color="rgba(255,255,255,0.8)" />
-            <Text style={styles.email}>{email}</Text>
-          </View>
+          {email ? (
+            <View style={styles.emailRow}>
+              <Ionicons name="mail-outline" size={14} color="rgba(255,255,255,0.8)" />
+              <Text style={styles.email}>{email}</Text>
+            </View>
+          ) : null}
         </View>
 
         <View style={styles.statsCard}>
@@ -74,9 +89,6 @@ export default function Profile() {
         <View style={styles.card}>
           <View style={styles.cardHeaderRow}>
             <Text style={styles.cardTitle}>Study Interests</Text>
-            <TouchableOpacity>
-              <Text style={styles.editBtn}>Edit</Text>
-            </TouchableOpacity>
           </View>
           <View style={styles.tagsRow}>
             {interests.map((interest, i) => (
@@ -85,41 +97,6 @@ export default function Profile() {
               </View>
             ))}
           </View>
-        </View>
-
-        <View style={styles.card}>
-          <View style={styles.cardHeaderRow}>
-            <Ionicons name="trophy-outline" size={18} color="#22c55e" />
-            <Text style={[styles.cardTitle, { marginLeft: 6 }]}>This Week Summary</Text>
-          </View>
-          {weekSummary.map((item, i) => (
-            <View key={i} style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>{item.label}</Text>
-              <Text style={styles.summaryValue}>{item.value}</Text>
-            </View>
-          ))}
-        </View>
-
-        <View style={styles.menuCard}>
-          {menuItems.map((item, i) => (
-            <TouchableOpacity
-              key={i}
-              style={[styles.menuItem, i < menuItems.length - 1 && styles.menuBorder]}
-            >
-              <View style={styles.menuLeft}>
-                <Ionicons name={item.icon as any} size={20} color="#888" />
-                <Text style={styles.menuLabel}>{item.label}</Text>
-              </View>
-              <View style={styles.menuRight}>
-                {item.badge && (
-                  <View style={styles.badge}>
-                    <Text style={styles.badgeText}>{item.badge}</Text>
-                  </View>
-                )}
-                <Ionicons name="chevron-forward" size={18} color="#555" />
-              </View>
-            </TouchableOpacity>
-          ))}
         </View>
 
         <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
@@ -136,72 +113,90 @@ const styles = StyleSheet.create({
   scroll: { paddingBottom: 32 },
   banner: {
     backgroundColor: "#5b21b6",
-    paddingTop: 60, paddingBottom: 48, alignItems: "center",
+    paddingTop: 60,
+    paddingBottom: 48,
+    alignItems: "center",
   },
   avatarCircle: {
-    width: 88, height: 88, borderRadius: 44,
-    backgroundColor: "#000", borderWidth: 2, borderColor: "#fff",
-    alignItems: "center", justifyContent: "center", marginBottom: 12,
+    width: 88,
+    height: 88,
+    borderRadius: 44,
+    backgroundColor: "#000",
+    borderWidth: 2,
+    borderColor: "#fff",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 12,
   },
   avatarText: { color: "#fff", fontSize: 32, fontWeight: "bold" },
   name: { color: "#fff", fontSize: 26, fontWeight: "bold", marginBottom: 6 },
   emailRow: { flexDirection: "row", alignItems: "center", gap: 6 },
   email: { color: "rgba(255,255,255,0.85)", fontSize: 13 },
   statsCard: {
-    flexDirection: "row", backgroundColor: "#0d0d0d",
-    borderRadius: 16, margin: 16, marginTop: -24,
-    padding: 16, borderWidth: 1, borderColor: "rgba(88,28,235,0.25)",
+    flexDirection: "row",
+    backgroundColor: "#0d0d0d",
+    borderRadius: 16,
+    margin: 16,
+    marginTop: -24,
+    padding: 16,
     justifyContent: "space-around",
   },
-  statItem: { alignItems: "center", gap: 6 },
-  statIcon: { width: 44, height: 44, borderRadius: 12, alignItems: "center", justifyContent: "center" },
+  statItem: { alignItems: "center" },
+  statIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   statValue: { color: "#fff", fontSize: 18, fontWeight: "bold" },
   statLabel: { color: "#888", fontSize: 11 },
   card: {
-    backgroundColor: "#0d0d0d", borderRadius: 16, padding: 16,
-    marginHorizontal: 16, marginBottom: 14,
-    borderWidth: 1, borderColor: "rgba(88,28,235,0.25)",
+    backgroundColor: "#0d0d0d",
+    borderRadius: 16,
+    padding: 16,
+    marginHorizontal: 16,
+    marginBottom: 14,
   },
-  cardHeaderRow: { flexDirection: "row", alignItems: "center", marginBottom: 12 },
-  cardTitle: { color: "#fff", fontSize: 16, fontWeight: "bold", flex: 1 },
-  editBtn: { color: "#22c55e", fontSize: 13, fontWeight: "500" },
-  tagsRow: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
+  cardHeaderRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 12,
+  },
+  cardTitle: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "bold",
+  },
+  tagsRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+  },
   tag: {
-    backgroundColor: "rgba(20,83,45,0.3)", borderWidth: 1,
-    borderColor: "rgba(34,197,94,0.3)", borderRadius: 20, paddingHorizontal: 12, paddingVertical: 6,
+    backgroundColor: "rgba(20,83,45,0.3)",
+    borderRadius: 20,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
   },
-  tagText: { color: "#86efac", fontSize: 12, fontWeight: "500" },
-  summaryRow: {
-    flexDirection: "row", justifyContent: "space-between",
-    backgroundColor: "rgba(0,0,0,0.4)", borderRadius: 10,
-    padding: 12, marginBottom: 8,
-    borderWidth: 1, borderColor: "rgba(88,28,235,0.15)",
+  tagText: {
+    color: "#86efac",
+    fontSize: 12,
+    fontWeight: "500",
   },
-  summaryLabel: { color: "#888", fontSize: 13 },
-  summaryValue: { color: "#fff", fontWeight: "bold", fontSize: 13 },
-  menuCard: {
-    backgroundColor: "#0d0d0d", borderRadius: 16,
-    marginHorizontal: 16, marginBottom: 14, overflow: "hidden",
-    borderWidth: 1, borderColor: "rgba(88,28,235,0.25)",
-  },
-  menuItem: {
-    flexDirection: "row", justifyContent: "space-between",
-    alignItems: "center", paddingHorizontal: 16, paddingVertical: 14,
-  },
-  menuBorder: { borderBottomWidth: 1, borderBottomColor: "rgba(88,28,235,0.2)" },
-  menuLeft: { flexDirection: "row", alignItems: "center", gap: 12 },
-  menuLabel: { color: "#fff", fontSize: 14, fontWeight: "500" },
-  menuRight: { flexDirection: "row", alignItems: "center", gap: 8 },
-  badge: {
-    width: 22, height: 22, borderRadius: 11,
-    backgroundColor: "#22c55e", alignItems: "center", justifyContent: "center",
-  },
-  badgeText: { color: "#fff", fontSize: 11, fontWeight: "bold" },
   logoutBtn: {
-    flexDirection: "row", alignItems: "center", justifyContent: "center",
-    gap: 8, marginHorizontal: 16, paddingVertical: 14,
-    backgroundColor: "#0d0d0d", borderRadius: 16,
-    borderWidth: 2, borderColor: "rgba(88,28,235,0.3)",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    marginHorizontal: 16,
+    paddingVertical: 14,
+    backgroundColor: "#0d0d0d",
+    borderRadius: 16,
   },
-  logoutText: { color: "#fff", fontWeight: "500", fontSize: 14 },
+  logoutText: {
+    color: "#fff",
+    fontWeight: "500",
+    fontSize: 14,
+  },
 });

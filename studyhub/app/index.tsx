@@ -1,6 +1,6 @@
-import { useRouter } from "expo-router";
-import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
+import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 export default function Onboarding() {
   const router = useRouter();
@@ -13,22 +13,20 @@ export default function Onboarding() {
 
   return (
     <View style={styles.container}>
-      {/* Logo */}
       <View style={styles.logoCircle}>
-        <Ionicons name="book-outline" size={48} color="#000" />
+        <Ionicons name="book-outline" size={48} color="#ffffff" />
       </View>
 
-      {/* Title */}
       <Text style={styles.title}>StudyHub</Text>
       <Text style={styles.tagline}>Focus. Connect. Achieve.</Text>
 
-      {/* Feature Cards */}
       <View style={styles.featuresContainer}>
         {features.map((f, i) => (
           <View key={i} style={styles.featureCard}>
             <View style={styles.featureIcon}>
-              <Ionicons name={f.icon as any} size={24} color="#1DB954" />
+              <Ionicons name={f.icon as any} size={24} color="#ffffff" />
             </View>
+
             <View>
               <Text style={styles.featureTitle}>{f.title}</Text>
               <Text style={styles.featureDesc}>{f.desc}</Text>
@@ -37,12 +35,16 @@ export default function Onboarding() {
         ))}
       </View>
 
-      {/* Button */}
-      <TouchableOpacity style={styles.btn} onPress={() => router.push("/login")}>
+      <TouchableOpacity
+        style={styles.btn}
+        onPress={() => router.push("/login")}
+      >
         <Text style={styles.btnText}>Get Started</Text>
       </TouchableOpacity>
 
-      <Text style={styles.subText}>Join thousands of students improving their habits</Text>
+      <Text style={styles.subText}>
+        Join thousands of students improving their habits
+      </Text>
     </View>
   );
 }
@@ -55,46 +57,87 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     padding: 24,
   },
+
   logoCircle: {
     width: 96,
     height: 96,
     borderRadius: 48,
-    backgroundColor: "#1DB954",
+    backgroundColor: "#2d2d2d",
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 20,
+    borderWidth: 1,
+    borderColor: "#404040",
   },
-  title: { fontSize: 40, fontWeight: "bold", color: "#fff", marginBottom: 6 },
-  tagline: { fontSize: 18, color: "#ccc", marginBottom: 36 },
-  featuresContainer: { width: "100%", gap: 12, marginBottom: 36 },
+
+  title: {
+    fontSize: 40,
+    fontWeight: "bold",
+    color: "#ffffff",
+    marginBottom: 6,
+  },
+
+  tagline: {
+    fontSize: 18,
+    color: "#9ca3af",
+    marginBottom: 36,
+  },
+
+  featuresContainer: {
+    width: "100%",
+    gap: 12,
+    marginBottom: 36,
+  },
+
   featureCard: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "rgba(255,255,255,0.08)",
+    backgroundColor: "#1e1e1e",
     borderRadius: 16,
     padding: 16,
     gap: 14,
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.15)",
+    borderColor: "#333333",
   },
+
   featureIcon: {
     width: 48,
     height: 48,
     borderRadius: 12,
-    backgroundColor: "rgba(29,185,84,0.2)",
+    backgroundColor: "#2d2d2d",
     alignItems: "center",
     justifyContent: "center",
   },
-  featureTitle: { color: "#fff", fontWeight: "600", fontSize: 15 },
-  featureDesc: { color: "#aaa", fontSize: 13, marginTop: 2 },
+
+  featureTitle: {
+    color: "#ffffff",
+    fontWeight: "600",
+    fontSize: 15,
+  },
+
+  featureDesc: {
+    color: "#9ca3af",
+    fontSize: 13,
+    marginTop: 2,
+  },
+
   btn: {
     width: "100%",
-    backgroundColor: "#1DB954",
+    backgroundColor: "#ffffff",
     borderRadius: 50,
     paddingVertical: 16,
     alignItems: "center",
     marginBottom: 12,
   },
-  btnText: { color: "#000", fontWeight: "bold", fontSize: 17 },
-  subText: { color: "#888", fontSize: 13 },
+
+  btnText: {
+    color: "#000000",
+    fontWeight: "bold",
+    fontSize: 17,
+  },
+
+  subText: {
+    color: "#6b7280",
+    fontSize: 13,
+  },
 });
