@@ -11,15 +11,6 @@ const weeklyData = [
   { day: "Sun", hours: 4.8 },
 ];
 
-const achievements = [
-  { emoji: "🔥", name: "Streak Master", unlocked: true },
-  { emoji: "⏰", name: "Early Bird", unlocked: true },
-  { emoji: "🎯", name: "Goal Crusher", unlocked: true },
-  { emoji: "💯", name: "100 Hours", unlocked: false },
-  { emoji: "👥", name: "Social Learner", unlocked: true },
-  { emoji: "📚", name: "Bookworm", unlocked: false },
-];
-
 const recentSessions = [
   { subject: "Data Structures", duration: "2h 30m", date: "Today" },
   { subject: "Operating Systems", duration: "1h 45m", date: "Yesterday" },
@@ -86,25 +77,6 @@ export default function Analytics() {
           <View style={styles.totalRow}>
             <Text style={styles.totalLabel}>Total this week</Text>
             <Text style={styles.totalValue}>37h 0m</Text>
-          </View>
-        </View>
-
-        {/* Achievements */}
-        <View style={styles.card}>
-          <View style={styles.cardHeaderRow}>
-            <Ionicons name="trophy-outline" size={18} color="#1a1a1a" />
-            <Text style={[styles.cardTitle, { marginLeft: 6 }]}>Achievements</Text>
-          </View>
-          <View style={styles.achievementsGrid}>
-            {achievements.map((a, i) => (
-              <View key={i} style={[
-                styles.achievementItem,
-                a.unlocked ? styles.achievementUnlocked : styles.achievementLocked
-              ]}>
-                <Text style={{ fontSize: 26, marginBottom: 4 }}>{a.emoji}</Text>
-                <Text style={[styles.achievementName, !a.unlocked && { color: "#bbb" }]}>{a.name}</Text>
-              </View>
-            ))}
           </View>
         </View>
 
@@ -202,12 +174,6 @@ const styles = StyleSheet.create({
   },
   totalLabel: { color: "#8a8a7a", fontSize: 13 },
   totalValue: { color: "#1a1a1a", fontWeight: "700", fontSize: 16 },
-
-  achievementsGrid: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
-  achievementItem: { width: "30%", borderRadius: 12, padding: 12, alignItems: "center" },
-  achievementUnlocked: { backgroundColor: "#f5f0e8", borderWidth: 1, borderColor: "#e0d8cc" },
-  achievementLocked: { backgroundColor: "#f9f7f3", borderWidth: 1, borderColor: "#ede8e0", opacity: 0.5 },
-  achievementName: { color: "#1a1a1a", fontSize: 10, fontWeight: "500", textAlign: "center", marginTop: 2 },
 
   sessionRow: { flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 12 },
   sessionIcon: {
